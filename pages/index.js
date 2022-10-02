@@ -12,7 +12,7 @@ import {
   Menu,
   MenuButton,
   MenuItem,
-  MenuList,
+  MenuList, Slider, SliderFilledTrack, SliderThumb, SliderTrack, Text,
   useDisclosure, VStack
 } from "@chakra-ui/react";
 import {DrawerExample} from "../components/Drawer";
@@ -30,23 +30,43 @@ export default function Home() {
   const [colladaModel, setColladaModel] = useState()
   const [placemark, setPlacemark] = useState()
   const [position, setPosition] = useState()
+  const [actualSize, setActualSize] = useState(false)
+  const [date, setDate] = useState()
 
+  const [dateSelectedAt, setDateSelectedAt] = useState()
+
+  useEffect(() => {
+    setDate(new Date())
+    setDateSelectedAt(new Date())
+  }, [])
+
+
+  useEffect(() => {
+    if (!colladaModel) return
+    if (actualSize) {
+      colladaModel.scale = 10000
+    } else {
+      colladaModel.scale = 90000
+    }
+  }, [actualSize])
 
 
   const tle = 'ISS (ZARYA)\n' +
-    '1 25544U 98067A   22274.03874838  .00014927  00000+0  26492-3 0  9996\n' +
-    '2 25544  51.6445 172.1493 0002537 314.1559  14.3121 15.50438125361599';
+    '1 25544U 98067A   22275.03521722  .00046746  00000+0  83199-3 0  9999\n' +
+    '2 25544  51.6418 167.2146 0003169 263.1060 229.2717 15.49661688361757';
 
   let WorldWind, modelLayer;
 
   useEffect(() => {
-    if(!wwd)return;
+    if (!wwd) return;
     const doIt = () => {
       if (position) {
-        const satelliteInfo = getSatelliteInfo(tle, +new Date());
+        const satelliteInfo = getSatelliteInfo(tle, new Date(+date + (new Date() - dateSelectedAt)));
         position.latitude = satelliteInfo.lat;
         position.longitude = satelliteInfo.lng;
         position.altitude = satelliteInfo.height * 1000;
+
+        setPosition(position)
 
         if (follow) {
           wwd.navigator.lookAtLocation.latitude = position.latitude
@@ -59,12 +79,10 @@ export default function Home() {
     const interval = setInterval(doIt, 100);
 
     return () => clearInterval(interval)
-  }, [follow, wwd])
+  }, [follow, wwd, date])
 
 
   useEffect(() => {
-    console.log(wwd)
-    console.log('holaaaaaanda')
     if (wwd && wwd.layers && wwd.layers.length === 4) {
       modelLayer = wwd.layers[3]
       if (!model) {
@@ -77,37 +95,6 @@ export default function Home() {
       wwd.redraw();
     }
   }, [model])
-
-  const createOrbit = () => {
-    if(!wwd) return;
-    const modelLayer = wwd.layers[3];
-    let orbitPoints = [];
-
-     for(let i= -(60*60*100); i++; i<0){
-       const newPos = new WorldWind.Position()
-
-       const info = getSatelliteInfo(tle, new Date() + (i*10));
-
-       newPos.latitude = info.lat;
-       newPos.longitude = info.lng;
-       newPos.altitude = info.height;
-
-       orbitPoints.push(newPos)
-     }
-
-     let path  = new WorldWind.Path(orbitPoints );
-
-     let orbitPathAttributes= new WorldWind.ShapeAttributes(null);
-     orbitPathAttributes.outlineColor = WorldWind.Color.RED;
-     orbitPathAttributes.interiorColor = new WorldWind.Color(1, 0, 0, 0.5);
-
-     path.attributes = orbitPathAttributes;
-     modelLayer.addRenderable(path)
-
-    console.log('redrawing')
-
-     wwd.redraw();
-  }
 
   useEffect(() => {
     const canvas = document.createElement('canvas');
@@ -181,31 +168,6 @@ export default function Home() {
         modelLayer.addRenderable(placemark)
       }
 
-      let orbitPoints = [];
-
-      for(let i= -(60*60*100); i++; i<0){
-        const newPos = new WorldWind.Position()
-
-        const info = getSatelliteInfo(tle, new Date() + (i*10));
-
-        newPos.latitude = info.lat;
-        newPos.longitude = info.lng;
-        newPos.altitude = info.height;
-
-        orbitPoints.push(newPos)
-      }
-
-      let path  = new WorldWind.Path(orbitPoints );
-
-      let orbitPathAttributes= new WorldWind.ShapeAttributes(null);
-      orbitPathAttributes.outlineColor = WorldWind.Color.RED;
-      orbitPathAttributes.interiorColor = new WorldWind.Color(1, 0, 0, 0.5);
-
-      path.attributes = orbitPathAttributes;
-      modelLayer.addRenderable(path)
-
-      console.log('redrawing')
-
       wwd.redraw();
     })
 
@@ -257,6 +219,17 @@ export default function Home() {
                     }}>Red Point</MenuItem>
                   </MenuList>
                 </Menu>
+                <Checkbox isChecked={actualSize} onChange={(e) => setActualSize(e.target.checked)}>Real size</Checkbox>
+                {date && <p>Time: {date.toLocaleString()}</p>}
+                <Slider aria-label='slider-ex-1' min={-1440} max={1440} defaultValue={0} onChangeEnd={(val) => {
+                  setDateSelectedAt(new Date())
+                  setDate(new Date(Date.now() + val * 60 * 1000))
+                }}>
+                  <SliderTrack>
+                    <SliderFilledTrack/>
+                  </SliderTrack>
+                  <SliderThumb/>
+                </Slider>
               </VStack>
             </Flex>
           </motion.div>
