@@ -8,7 +8,7 @@ import {
   Checkbox,
   Container,
   Drawer,
-  Flex,
+  Flex, Heading,
   Menu,
   MenuButton,
   MenuItem,
@@ -188,7 +188,16 @@ export default function Home() {
     <>
       <Head>
         <title>Voyagers: ISS Tracker</title>
+        <link rel={'icon'} href={'/favicon.ico'}/>
       </Head>
+
+      <Flex paddingY={50} paddingX={50} position={'absolute'} top={0} right={0}>
+        <VStack>
+          <Heading>Voyagers</Heading>
+        </VStack>
+      </Flex>
+
+
     <div id={'canvasContainer'}>
       <canvas style={{position: 'absolute', zIndex: -1}} id="canvasOne" width="1024" height="768">
         Your browser does not support HTML5 Canvas.
@@ -253,6 +262,9 @@ export default function Home() {
           <MyModal/>
         </Flex>
       </Flex>
+      <Flex paddingY={50} paddingX={50} position={'absolute' } bottom={0} right={0}>
+    <Image src={'/spaceapps.png'} width={'100'} height={'50'}/>
+    </Flex>
     </div>
     </>
   )
