@@ -34,6 +34,10 @@ export default function Home() {
   const [date, setDate] = useState()
   const [dateToShow, setDateToShow] = useState((date && dateSelectedAt) && new Date(+date + (new Date() - dateSelectedAt)))
 
+  const [tle, setTLE] = useState('ISS (ZARYA)\n' +
+    '1 25544U 98067A   22275.03521722  .00046746  00000+0  83199-3 0  9999\n' +
+    '2 25544  51.6418 167.2146 0003169 263.1060 229.2717 15.49661688361757')
+
   const [dateSelectedAt, setDateSelectedAt] = useState()
 
   useEffect(() => {
@@ -50,11 +54,6 @@ export default function Home() {
       colladaModel.scale = 90000
     }
   }, [actualSize])
-
-
-  const tle = 'ISS (ZARYA)\n' +
-    '1 25544U 98067A   22275.03521722  .00046746  00000+0  83199-3 0  9999\n' +
-    '2 25544  51.6418 167.2146 0003169 263.1060 229.2717 15.49661688361757';
 
   let WorldWind, modelLayer;
 
@@ -103,7 +102,6 @@ export default function Home() {
     canvas.id = 'canvasOne';
     document.getElementById('canvasContainer').appendChild(canvas);
     import('../worldwind.min').then((resolved) => {
-      console.log('hola')
       WorldWind = resolved
       const canvaElement = document.getElementById('canvasOne');
 
@@ -176,7 +174,7 @@ export default function Home() {
     return () => document.getElementById('canvasOne').remove();
   }, [])
 
-  const {getButtonProps, getDisclosureProps, isOpen} = useDisclosure()
+  const {getButtonProps, getDisclosureProps, isOpen} = useDisclosure({defaultIsOpen: true})
   const [hidden, setHidden] = useState(!isOpen)
 
   const [val, setVal] = useState(0)
@@ -198,74 +196,73 @@ export default function Home() {
       </Flex>
 
 
-    <div id={'canvasContainer'}>
-      <canvas style={{position: 'absolute', zIndex: -1}} id="canvasOne" width="1024" height="768">
-        Your browser does not support HTML5 Canvas.
-      </canvas>
-      <Flex background={'transparent'} position={'absolute'}>
-        <Flex paddingY={50} paddingLeft={25} flexDir={'column'} justify={'space-between'} height={'100vh'}>
-          <Button zIndex={10} {...getButtonProps()}>Menu</Button>
-          <motion.div
-            {...getDisclosureProps()}
-            hidden={hidden}
-            initial={false}
-            onAnimationStart={() => setHidden(false)}
-            onAnimationComplete={() => setHidden(!isOpen)}
-            animate={{width: isOpen ? 350 : 0}}
-            style={{
-              background: 'transparent  ',
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              position: 'absolute',
-              left: '0',
-              height: '100vh',
-              top: '0',
-            }}
-          >
-            <Flex paddingY={5} paddingX={5} marginLeft={25} rounded={10} flexDir={'column'} background={'gray.700'}
-                  marginTop={100}>
-              <VStack spacing={5} align={'start'}>
-                <Checkbox isChecked={follow} onChange={(e) => setFollow(e.target.checked)}>Follow Station</Checkbox>
-                <Menu flexGrow={'0'}>
-                  <MenuButton flexGrow={'0'} as={Button} rightIcon={<ChevronDownIcon/>}>
-                    Model: {model ? '3D' : 'Red Point'}
-                  </MenuButton>
-                  <MenuList>
-                    <MenuItem onClick={() => {
-                      setModel(true);
-                    }}>3D</MenuItem>
-                    <MenuItem onClick={() => {
-                      setModel(false)
-                    }}>Red Point</MenuItem>
-                  </MenuList>
-                </Menu>
-                <Checkbox isChecked={actualSize} onChange={(e) => setActualSize(e.target.checked)}>Real size</Checkbox>
-                {date && <p>Time: {dateToShow ? dateToShow.toLocaleString() : null}</p>}
-                <Slider aria-label='slider-ex-1' min={-1440} max={1440} value={val} onChange={(val) => setVal(val)} onChangeEnd={(val) => {
-                  setDateSelectedAt(new Date())
-                  setVal(val)
-                  setDate(new Date(Date.now() + val * 60 * 1000))
-                }}>
-                  <SliderTrack>
-                    <SliderFilledTrack/>
-                  </SliderTrack>
-                  <SliderThumb/>
-                </Slider>
-                <Button onClick={() => {
-                  setDate(new Date())
-                  setDateSelectedAt(new Date())
-                  setVal(0)
-                }}>Reset date</Button>
-              </VStack>
-            </Flex>
-          </motion.div>
-          <MyModal/>
+      <div id={'canvasContainer'}>
+        <canvas style={{position: 'absolute', zIndex: -1}} id="canvasOne" width="1024" height="768">
+          Your browser does not support HTML5 Canvas.
+        </canvas>
+        <Flex background={'transparent'} position={'absolute'}>
+          <Flex paddingY={50} paddingLeft={25} flexDir={'column'} justify={'space-between'} height={'100vh'}>
+            <Button zIndex={10} {...getButtonProps()}>Menu</Button>
+            <motion.div
+              {...getDisclosureProps()}
+              hidden={hidden}
+              initial={false}
+              onAnimationStart={() => setHidden(false)}
+              onAnimationComplete={() => setHidden(!isOpen)}
+              animate={{width: isOpen ? 350 : 0}}
+              style={{
+                background: 'transparent  ',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                position: 'absolute',
+                left: '0',
+                height: '100vh',
+                top: '0',
+              }}
+            >
+              <Flex paddingY={5} paddingX={5} marginLeft={25} rounded={10} flexDir={'column'} background={'gray.700'}
+                    marginTop={100}>
+                <VStack spacing={5} align={'start'}>
+                  <Checkbox isChecked={follow} onChange={(e) => setFollow(e.target.checked)}>Follow Station</Checkbox>
+                  <Menu flexGrow={'0'}>
+                    <MenuButton flexGrow={'0'} as={Button} rightIcon={<ChevronDownIcon/>}>
+                      Model: {model ? '3D' : 'Red Point'}
+                    </MenuButton>
+                    <MenuList>
+                      <MenuItem onClick={() => {
+                        setModel(true);
+                      }}>3D</MenuItem>
+                      <MenuItem onClick={() => {
+                        setModel(false)
+                      }}>Red Point</MenuItem>
+                    </MenuList>
+                  </Menu>
+                  <Checkbox isChecked={actualSize} onChange={(e) => setActualSize(e.target.checked)}>Real
+                    size</Checkbox>
+                  {date && <p>Time: {dateToShow ? dateToShow.toLocaleString() : null}</p>}
+                  <Slider aria-label='slider-ex-1' min={-1440} max={1440} value={val} onChange={(val) => setVal(val)}
+                          onChangeEnd={(val) => {
+                            setDateSelectedAt(new Date())
+                            setVal(val)
+                            setDate(new Date(Date.now() + val * 60 * 1000))
+                          }}>
+                    <SliderTrack>
+                      <SliderFilledTrack/>
+                    </SliderTrack>
+                    <SliderThumb/>
+                  </Slider>
+                  <Button onClick={() => {
+                    setDate(new Date())
+                    setDateSelectedAt(new Date())
+                    setVal(0)
+                  }}>Reset date</Button>
+                </VStack>
+              </Flex>
+            </motion.div>
+            <MyModal/>
+          </Flex>
         </Flex>
-      </Flex>
-      <Flex paddingY={50} paddingX={50} position={'absolute' } bottom={0} right={0}>
-    <Image src={'/spaceapps.png'} width={'100'} height={'50'}/>
-    </Flex>
-    </div>
+      </div>
     </>
   )
 }
