@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/iss-tracker.iml" filepath="$PROJECT_DIR$/.idea/iss-tracker.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../space-station-tracker/.idea/space-station-tracker.iml" filepath="$PROJECT_DIR$/../space-station-tracker/.idea/space-station-tracker.iml" />
     </modules>
   </component>
 </project>

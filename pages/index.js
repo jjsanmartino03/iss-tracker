@@ -2,18 +2,45 @@ import Head from 'next/head'
 import Image from 'next/image'
 import {useEffect, useState} from "react";
 import {getSatelliteInfo} from "tle.js";
+import SimpleSidebar from "../components/Sidebar";
+import {
+  Button,
+  Checkbox,
+  Container,
+  Drawer,
+  Flex,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  useDisclosure, VStack
+} from "@chakra-ui/react";
+import {DrawerExample} from "../components/Drawer";
+import {motion} from 'framer-motion'
+import MyModal from "../components/MyModal";
+
+function ChevronDownIcon() {
+  return null;
+}
 
 export default function Home() {
   const [follow, setFollow] = useState(true);
   const [model, setModel] = useState(true)
+  const [wwd, setWWD] = useState()
+  const [colladaModel, setColladaModel] = useState()
+  const [placemark, setPlacemark] = useState()
+  const [position, setPosition] = useState()
+
+
 
   const tle = 'ISS (ZARYA)\n' +
     '1 25544U 98067A   22274.03874838  .00014927  00000+0  26492-3 0  9996\n' +
     '2 25544  51.6445 172.1493 0002537 314.1559  14.3121 15.50438125361599';
 
-  let wwd, position, WorldWind, modelLayer;
+  let WorldWind, modelLayer;
 
   useEffect(() => {
+    if(!wwd)return;
     const doIt = () => {
       if (position) {
         const satelliteInfo = getSatelliteInfo(tle, +new Date());
@@ -32,12 +59,31 @@ export default function Home() {
     const interval = setInterval(doIt, 100);
 
     return () => clearInterval(interval)
-  }, [follow])
+  }, [follow, wwd])
+
+
+  useEffect(() => {
+    console.log(wwd)
+    console.log('holaaaaaanda')
+    if (wwd && wwd.layers && wwd.layers.length === 4) {
+      modelLayer = wwd.layers[3]
+      if (!model) {
+        modelLayer.addRenderable(placemark)
+        colladaModel.enabled = false
+      } else {
+        colladaModel.enabled = true
+        modelLayer.removeRenderable(placemark);
+      }
+      wwd.redraw();
+    }
+  }, [model])
 
   const createOrbit = () => {
-    /* let orbitPoints = []
+    if(!wwd) return;
+    const modelLayer = wwd.layers[3];
+    let orbitPoints = [];
 
-     for(let i= -(60*60*10); i++; i<0){
+     for(let i= -(60*60*100); i++; i<0){
        const newPos = new WorldWind.Position()
 
        const info = getSatelliteInfo(tle, new Date() + (i*10));
@@ -58,7 +104,9 @@ export default function Home() {
      path.attributes = orbitPathAttributes;
      modelLayer.addRenderable(path)
 
-     wwd.redraw();*/
+    console.log('redrawing')
+
+     wwd.redraw();
   }
 
   useEffect(() => {
@@ -66,13 +114,16 @@ export default function Home() {
     canvas.id = 'canvasOne';
     document.getElementById('canvasContainer').appendChild(canvas);
     import('../worldwind.min').then((resolved) => {
+      console.log('hola')
       WorldWind = resolved
       const canvaElement = document.getElementById('canvasOne');
 
       canvaElement.setAttribute('height', window.innerHeight)
       canvaElement.setAttribute('width', window.innerWidth)
 
-      wwd = new WorldWind.WorldWindow("canvasOne");
+      const wwd = new WorldWind.WorldWindow("canvasOne");
+
+      setWWD(wwd)
 
       wwd.addLayer(new WorldWind.BMNGOneImageLayer());
       const starFieldLayer = new WorldWind.StarFieldLayer();
@@ -88,53 +139,130 @@ export default function Home() {
       modelLayer = new WorldWind.RenderableLayer();
       wwd.addLayer(modelLayer);
 
-      position = new WorldWind.Position(10.0, -125.0, 800000.0);
+      const position = new WorldWind.Position(10.0, -125.0, 800000.0);
+
+      setPosition(position)
+
+      const colladaLoader = new WorldWind.ColladaLoader(position);
+      colladaLoader.init({dirPath: '/models/'});
+
+      let placemarkAttributes = new WorldWind.PlacemarkAttributes(null);
+      let highlightPlacemarkAttributes = new WorldWind.PlacemarkAttributes(placemarkAttributes);
+      highlightPlacemarkAttributes.imageScale = 0.4;
+      placemarkAttributes.imageSource = '/red_dot.png';
+      placemarkAttributes.imageScale = 0.3;
+
+      const placemark = new WorldWind.Placemark(position)
+
+      setPlacemark(placemark)
+      placemark.attributes = placemarkAttributes;
+      placemark.highlightAttributes = highlightPlacemarkAttributes
+
+      placemarkAttributes.imageOffset = new WorldWind.Offset(
+        WorldWind.OFFSET_FRACTION, 0.5,
+        WorldWind.OFFSET_FRACTION, 0.5);
+      placemarkAttributes.imageColor = WorldWind.Color.WHITE;
+      placemarkAttributes.labelAttributes.offset = new WorldWind.Offset(
+        WorldWind.OFFSET_FRACTION, 0.5,
+        WorldWind.OFFSET_FRACTION, 1.0);
+      placemarkAttributes.labelAttributes.color = WorldWind.Color.WHITE;
+
+      placemark.attributes = placemarkAttributes;
+      placemark.highlightAttributes = highlightPlacemarkAttributes;
+
 
       if (model) {
-        let colladaLoader = new WorldWind.ColladaLoader(position);
-        colladaLoader.init({dirPath: '/models/'});
         colladaLoader.load("ISS.dae", function (colladaModel) {
           colladaModel.scale = 90000;
           modelLayer.addRenderable(colladaModel);
+          setColladaModel(colladaModel)
         });
       } else {
-        let placemarkAttributes = new WorldWind.PlacemarkAttributes(null);
-        let highlightPlacemarkAttributes = new WorldWind.PlacemarkAttributes(placemarkAttributes);
-        highlightPlacemarkAttributes.imageScale = 0.4;
-        placemarkAttributes.imageSource = '/red_dot.png';
-        placemarkAttributes.imageScale = 0.3;
-
-        let placemark = new WorldWind.Placemark(position)
-        placemark.attributes = placemarkAttributes;
-        placemark.highlightAttributes = highlightPlacemarkAttributes
-
-        placemarkAttributes.imageOffset = new WorldWind.Offset(
-          WorldWind.OFFSET_FRACTION, 0.5,
-          WorldWind.OFFSET_FRACTION, 0.5);
-        placemarkAttributes.imageColor = WorldWind.Color.WHITE;
-        placemarkAttributes.labelAttributes.offset = new WorldWind.Offset(
-          WorldWind.OFFSET_FRACTION, 0.5,
-          WorldWind.OFFSET_FRACTION, 1.0);
-        placemarkAttributes.labelAttributes.color = WorldWind.Color.WHITE;
-
-        placemark.attributes = placemarkAttributes;
-        placemark.highlightAttributes = highlightPlacemarkAttributes;
-
         modelLayer.addRenderable(placemark)
-
       }
 
-      createOrbit()
+      let orbitPoints = [];
+
+      for(let i= -(60*60*100); i++; i<0){
+        const newPos = new WorldWind.Position()
+
+        const info = getSatelliteInfo(tle, new Date() + (i*10));
+
+        newPos.latitude = info.lat;
+        newPos.longitude = info.lng;
+        newPos.altitude = info.height;
+
+        orbitPoints.push(newPos)
+      }
+
+      let path  = new WorldWind.Path(orbitPoints );
+
+      let orbitPathAttributes= new WorldWind.ShapeAttributes(null);
+      orbitPathAttributes.outlineColor = WorldWind.Color.RED;
+      orbitPathAttributes.interiorColor = new WorldWind.Color(1, 0, 0, 0.5);
+
+      path.attributes = orbitPathAttributes;
+      modelLayer.addRenderable(path)
+
+      console.log('redrawing')
+
+      wwd.redraw();
     })
 
     return () => document.getElementById('canvasOne').remove();
-  })
+  }, [])
+
+  const {getButtonProps, getDisclosureProps, isOpen} = useDisclosure()
+  const [hidden, setHidden] = useState(!isOpen)
 
   return (
     <div id={'canvasContainer'}>
-      <canvas id="canvasOne" width="1024" height="768">
+      <canvas style={{position: 'absolute', zIndex: -1}} id="canvasOne" width="1024" height="768">
         Your browser does not support HTML5 Canvas.
       </canvas>
+      <Flex background={'transparent'} position={'absolute'}>
+        <Flex paddingY={50} paddingLeft={25} flexDir={'column'} justify={'space-between'} height={'100vh'}>
+          <Button zIndex={10} {...getButtonProps()}>Menu</Button>
+          <motion.div
+            {...getDisclosureProps()}
+            hidden={hidden}
+            initial={false}
+            onAnimationStart={() => setHidden(false)}
+            onAnimationComplete={() => setHidden(!isOpen)}
+            animate={{width: isOpen ? 350 : 0}}
+            style={{
+              background: 'transparent  ',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              position: 'absolute',
+              left: '0',
+              height: '100vh',
+              top: '0',
+            }}
+          >
+            <Flex paddingY={5} paddingX={5} marginLeft={25} rounded={10} flexDir={'column'} background={'gray.700'}
+                  marginTop={100}>
+              <VStack spacing={5} align={'start'}>
+                <Checkbox isChecked={follow} onChange={(e) => setFollow(e.target.checked)}>Follow Station</Checkbox>
+                <Menu flexGrow={'0'}>
+                  <MenuButton flexGrow={'0'} as={Button} rightIcon={<ChevronDownIcon/>}>
+                    Model: {model ? '3D' : 'Red Point'}
+                  </MenuButton>
+                  <MenuList>
+                    <MenuItem onClick={() => {
+                      setModel(true);
+                    }}>3D</MenuItem>
+                    <MenuItem onClick={() => {
+                      setModel(false)
+                    }}>Red Point</MenuItem>
+                  </MenuList>
+                </Menu>
+              </VStack>
+            </Flex>
+          </motion.div>
+          <MyModal/>
+        </Flex>
+      </Flex>
     </div>
   )
 }
