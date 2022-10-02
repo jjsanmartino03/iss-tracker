@@ -24,7 +24,7 @@ function ChevronDownIcon() {
 }
 
 export default function Home() {
-  const [follow, setFollow] = useState(true);
+  const [follow, setFollow] = useState(false);
   const [model, setModel] = useState(true)
   const [wwd, setWWD] = useState()
   const [colladaModel, setColladaModel] = useState()
@@ -32,6 +32,7 @@ export default function Home() {
   const [position, setPosition] = useState()
   const [actualSize, setActualSize] = useState(false)
   const [date, setDate] = useState()
+  const [dateToShow, setDateToShow] = useState((date && dateSelectedAt) && new Date(+date + (new Date() - dateSelectedAt)))
 
   const [dateSelectedAt, setDateSelectedAt] = useState()
 
@@ -62,6 +63,7 @@ export default function Home() {
     const doIt = () => {
       if (position) {
         const satelliteInfo = getSatelliteInfo(tle, new Date(+date + (new Date() - dateSelectedAt)));
+        setDateToShow(new Date(+date + (new Date() - dateSelectedAt)))
         position.latitude = satelliteInfo.lat;
         position.longitude = satelliteInfo.lng;
         position.altitude = satelliteInfo.height * 1000;
@@ -177,7 +179,16 @@ export default function Home() {
   const {getButtonProps, getDisclosureProps, isOpen} = useDisclosure()
   const [hidden, setHidden] = useState(!isOpen)
 
+  const [val, setVal] = useState(0)
+  useEffect(() => {
+    setDateToShow(new Date(+date + (new Date() - dateSelectedAt)))
+  }, [date, dateSelectedAt])
+
   return (
+    <>
+      <Head>
+        <title>Voyagers: ISS Tracker</title>
+      </Head>
     <div id={'canvasContainer'}>
       <canvas style={{position: 'absolute', zIndex: -1}} id="canvasOne" width="1024" height="768">
         Your browser does not support HTML5 Canvas.
@@ -220,9 +231,10 @@ export default function Home() {
                   </MenuList>
                 </Menu>
                 <Checkbox isChecked={actualSize} onChange={(e) => setActualSize(e.target.checked)}>Real size</Checkbox>
-                {date && <p>Time: {date.toLocaleString()}</p>}
-                <Slider aria-label='slider-ex-1' min={-1440} max={1440} defaultValue={0} onChangeEnd={(val) => {
+                {date && <p>Time: {dateToShow ? dateToShow.toLocaleString() : null}</p>}
+                <Slider aria-label='slider-ex-1' min={-1440} max={1440} value={val} onChange={(val) => setVal(val)} onChangeEnd={(val) => {
                   setDateSelectedAt(new Date())
+                  setVal(val)
                   setDate(new Date(Date.now() + val * 60 * 1000))
                 }}>
                   <SliderTrack>
@@ -230,6 +242,11 @@ export default function Home() {
                   </SliderTrack>
                   <SliderThumb/>
                 </Slider>
+                <Button onClick={() => {
+                  setDate(new Date())
+                  setDateSelectedAt(new Date())
+                  setVal(0)
+                }}>Reset date</Button>
               </VStack>
             </Flex>
           </motion.div>
@@ -237,5 +254,6 @@ export default function Home() {
         </Flex>
       </Flex>
     </div>
+    </>
   )
 }
